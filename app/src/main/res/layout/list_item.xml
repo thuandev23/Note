@@ -26,17 +26,9 @@
                android:textColor="@color/black"
                android:textStyle="bold"
                android:padding="8dp"
-               android:layout_alignParentStart="true"
-               android:layout_toStartOf="@id/popup_menu"/>
+               android:layout_alignParentStart="true"/>
 
-           <ImageView
-               android:id="@+id/popup_menu"
-               android:layout_width="40dp"
-               android:layout_height="40dp"
-               android:scaleType="centerCrop"
-               android:src="@drawable/baseline_add_24"
-               android:layout_alignParentEnd="true"
-               />
+
         </RelativeLayout>
         <TextView
             android:id="@+id/text_view_description"

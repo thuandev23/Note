@@ -6,6 +6,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import com.noteapp.models.Note
 
 @Dao
@@ -15,8 +16,10 @@ interface NoteDao {
     suspend fun insert(note: Note)
 
     // Update a note
-    @Query("UPDATE notes_table SET title = :title, description = :description, date = :date WHERE id = :id")
-    suspend fun update(id: Int, title: String, description: String, date: String)
+    /*@Query("UPDATE notes_table SET title = :title, description = :description, date = :date WHERE id = :id")
+    suspend fun update(id: Int, title: String, description: String, date: String)*/
+    @Update
+    suspend fun update(note: Note)
 
     // Delete a note
     @Delete

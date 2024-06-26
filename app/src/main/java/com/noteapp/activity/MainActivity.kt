@@ -2,37 +2,39 @@ package com.noteapp.activity
 
 import android.content.Intent
 import android.os.Bundle
-import android.view.MenuItem
 import android.view.View
 import android.widget.LinearLayout
-import android.widget.PopupMenu
 import android.widget.SearchView
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
-import com.noteapp.R
+import com.noteapp.adapter.DayAdapter
 import com.noteapp.adapter.NoteAdapter
 import com.noteapp.database.NoteDatabase
 import com.noteapp.databinding.ActivityMainBinding
+import com.noteapp.models.Day
 import com.noteapp.models.Note
-import com.noteapp.models.NoteViewModel
-import com.noteapp.repository.NoteRepository
+import com.noteapp.viewmodels.NoteViewModel
+import dagger.hilt.android.AndroidEntryPoint
 
-class MainActivity : AppCompatActivity(), NoteAdapter.NoteItemClickListener, PopupMenu.OnMenuItemClickListener{
+@AndroidEntryPoint
+class MainActivity : AppCompatActivity(), NoteAdapter.NoteItemClickListener{
     private lateinit var binding: ActivityMainBinding
-    lateinit var viewModel: NoteViewModel
-    lateinit var adapter: NoteAdapter
+    private val viewModel by viewModels<NoteViewModel>()
+    lateinit var adapterNote: NoteAdapter
+    lateinit var adapterDay: DayAdapter
     private lateinit var database: NoteDatabase
     lateinit var selectedNote: Note
 
     private val updateNote = registerForActivityResult(ActivityResultContracts.StartActivityForResult()){ result ->
         if (result.resultCode == RESULT_OK){
             val note = result.data?.getSerializableExtra("note") as Note
-            if (note != null){
+            val isDelete = result.data?.getBooleanExtra("isDelete", false) ?: false
+            if (isDelete){
+                viewModel.delete(note)
+            }else{
                 viewModel.update(note)
             }
         }
@@ -42,28 +44,77 @@ class MainActivity : AppCompatActivity(), NoteAdapter.NoteItemClickListener, Pop
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        initUI()
+        binding.apply {
+            btnSearch.setOnClickListener {
+                searchView.visibility = View.VISIBLE
+                btnSearch.visibility = View.GONE
+                tvNotes.visibility = View.GONE
+                searchView.isIconified = false // Ensure the search view is expanded
+                searchView.requestFocus() // Optional: focus on search input
+            }
+            searchView.setOnCloseListener {
+                btnSearch.visibility = View.VISIBLE
+                tvNotes.visibility = View.VISIBLE
+                searchView.visibility = View.GONE
+                false
+            }
+        }
 
-        viewModel = ViewModelProvider(this,
-            ViewModelProvider.AndroidViewModelFactory.getInstance(application))[NoteViewModel::class.java]
+        initRecyclerviewDay()
+        initRecyclerviewNote()
+        // hilt understanding the viewModel
+        // viewModel = ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(application))[NoteViewModel::class.java]
 
         viewModel.allNotes.observe(this ){ list ->
             list?.let {
-                adapter.updateList(list)
+                if (list.isEmpty()){
+                    binding.imgNotNotes.visibility = View.VISIBLE
+                    binding.createText.visibility = View.VISIBLE
+                    binding.recyclerViewNote.visibility = View.GONE
+                }
+                else{
+                    binding.imgNotNotes.visibility = View.GONE
+                    binding.createText.visibility = View.GONE
+                    adapterNote.updateList(list)
+                    binding.recyclerViewNote.visibility = View.VISIBLE
+
+                }
+
             }
         }
         database = NoteDatabase.getDatabase(this)
-
     }
 
-    private fun initUI() {
+    private fun initRecyclerviewDay() {
         binding.apply {
-            recyclerView.setHasFixedSize(true)
-            recyclerView.layoutManager = StaggeredGridLayoutManager(2, LinearLayout.VERTICAL)
-            adapter = NoteAdapter(this@MainActivity, this@MainActivity)
-            recyclerView.adapter = adapter
+            recyclerViewDay.setHasFixedSize(true)
+            recyclerViewDay.layoutManager = LinearLayoutManager(this@MainActivity, LinearLayoutManager.HORIZONTAL, false)
+            //example day
+            val exampleDays = listOf(
+                Day("Tus", "25", "April"),
+                Day("Tus", "25", "April"),
+                Day("Tus", "25", "April"),
+                Day("Tus", "25", "April"),
+                Day("Tus", "25", "April"),
+                Day("Tus", "25", "April"),
+                Day("Tus", "25", "April"),
+                Day("Tus", "25", "April"),
+                Day("Tus", "25", "April"),
+            )
 
-            val getCOntent = registerForActivityResult(ActivityResultContracts.StartActivityForResult()){result ->
+            adapterDay = DayAdapter(exampleDays)
+            recyclerViewDay.adapter = adapterDay
+        }
+    }
+
+    private fun initRecyclerviewNote() {
+        binding.apply {
+            recyclerViewNote.setHasFixedSize(true)
+            recyclerViewNote.layoutManager = StaggeredGridLayoutManager(2, LinearLayout.VERTICAL)
+            adapterNote = NoteAdapter(this@MainActivity, this@MainActivity)
+            recyclerViewNote.adapter = adapterNote
+
+            val getContent = registerForActivityResult(ActivityResultContracts.StartActivityForResult()){result ->
                 if (result.resultCode == RESULT_OK){
                     val note = result.data?.getSerializableExtra("note") as Note
                     if (note != null){
@@ -74,7 +125,7 @@ class MainActivity : AppCompatActivity(), NoteAdapter.NoteItemClickListener, Pop
 
             binding.buttonAddNote.setOnClickListener {
                 val intent = Intent(this@MainActivity, AddNoteActivity::class.java)
-                getCOntent.launch(intent)
+                getContent.launch(intent)
             }
 
             binding.searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener{
@@ -84,7 +135,7 @@ class MainActivity : AppCompatActivity(), NoteAdapter.NoteItemClickListener, Pop
 
                 override fun onQueryTextChange(newText: String?): Boolean {
                     if (newText != null){
-                        adapter.searchList(newText)
+                        adapterNote.searchList(newText)
                     }
                     return false
                 }
@@ -100,21 +151,6 @@ class MainActivity : AppCompatActivity(), NoteAdapter.NoteItemClickListener, Pop
 
     override fun onLongItemClicked(note: Note, cardView: View) {
         selectedNote = note
-        popUpDisplay(cardView)
     }
 
-    private fun popUpDisplay(cardView: View) {
-        val popup = PopupMenu(this, cardView)
-        popup.inflate(R.menu.pop_up_menu)
-        popup.setOnMenuItemClickListener(this)
-        popup.show()
-    }
-
-    override fun onMenuItemClick(item: MenuItem?): Boolean {
-        if (item?.itemId == R.id.delete){
-            viewModel.delete(selectedNote)
-            return true
-        }
-        return false
-    }
 }

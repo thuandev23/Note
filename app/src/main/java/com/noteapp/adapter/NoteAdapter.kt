@@ -30,10 +30,6 @@ class NoteAdapter(private val context: Context, private val listener: NoteItemCl
             binding.layoutCardView.setOnClickListener {
                 listener.onItemClicked(notes[adapterPosition])
             }
-            binding.layoutCardView.setOnLongClickListener {
-                listener.onLongItemClicked(notes[adapterPosition], binding.layoutCardView)
-                true
-            }
         }
     }
 
@@ -48,17 +44,8 @@ class NoteAdapter(private val context: Context, private val listener: NoteItemCl
     }
     fun randomColor(): Int {
         val list = ArrayList<Int>()
-        list.add(R.color.red)
-        list.add(R.color.green)
-        list.add(R.color.blue)
-        list.add(R.color.yellow)
-        list.add(R.color.cyan)
-        list.add(R.color.magenta)
-        list.add(R.color.gray)
-        list.add(R.color.lightGray)
-        list.add(R.color.darkGray)
-        list.add(R.color.purple)
-        list.add(R.color.orange)
+        list.add(R.color.any)
+
         val seed = System.currentTimeMillis().toInt()
         val random = Random(seed).nextInt(list.size)
         return list[random]

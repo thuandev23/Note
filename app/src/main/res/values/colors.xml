@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
+    <color name="black">#373737</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="btnAdd">#64D6E4</color>
+    <color name="btnAdd">#88E5F1</color>
     // random colors
     <color name="red">#FF0000</color>
     <color name="green">#00FF00</color>
@@ -15,4 +15,5 @@
     <color name="darkGray">#A9A9A9</color>
     <color name="purple">#800080</color>
     <color name="orange">#FFA500</color>
+    <color name="any">#FFEDB8</color>
 </resources>
